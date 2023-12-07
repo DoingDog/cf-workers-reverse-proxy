@@ -6,7 +6,7 @@ async function handleRequest(request) {
   const path = url.pathname;
   const domainParts = url.hostname.split(".");
   if (domainParts.length > 3) return new Response("Invalid request", { status: 400, statusText: "Bad Request" });
-  let newHost = domainParts[0].replaceAll("--", "__").replace(/-/g, ".").replaceAll("__", "-");
+  let newHost = domainParts[0].replaceAll("--", "_").replaceAll("-", ".").replaceAll("_", "-");
   if (!newHost.includes(".")) return new Response("Invalid request", { status: 400, statusText: "Bad Request" });
   const newURL = `https://${newHost}${path}`;
   const modifiedReq = new Request(newURL, {
@@ -20,7 +20,7 @@ async function handleRequest(request) {
     let data = await response.text();
     const baseProxyDomain = domainParts.slice(1).join(".");
     data = data.replace(new RegExp("(^|[^+/a-zA-Z0-9])//([a-zA-Z0-9-\\.]+)/", "gi"), (_, prefix, matchedURL) => {
-      let replacedURL = matchedURL.replaceAll(".", "-").replaceAll("--", "----");
+      let replacedURL = matchedURL.replaceAll("-", "--").replaceAll(".", "-");
       return `${prefix}//${replacedURL}.${baseProxyDomain}/`;
     });
     return new Response(data, {
