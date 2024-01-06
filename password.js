@@ -1,24 +1,36 @@
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
 });
+
 async function handleRequest(request) {
-  const url = new URL(request.url);
-  const path = url.pathname;
-  const domainParts = url.hostname.split(".");
+  //add this to cf worker routes with a custom password
+  //*-mypassword.mydomain.com/*
+  //then access the proxy at https://www-baidu-com-mypassword.mydomain.com/index.html
+  let password = "mypass";
+  let url = new URL(request.url);
+  let path = url.pathname;
+  let domainParts = url.hostname.split(".");
   if (domainParts.length > 3) return new Response("Invalid request", { status: 400, statusText: "Bad Request" });
   let newHostd = domainParts[0].replaceAll("nx----", "xn__").replaceAll("--", "_").replaceAll("-", ".").replaceAll("_", "-");
   let newHost = newHostd.substring(0, newHostd.lastIndexOf("."));
+  password = newHostd.substring(newHostd.lastIndexOf(".") + 1);
   if (!newHost.includes(".")) return new Response("Invalid request", { status: 400, statusText: "Bad Request" });
-  let port = "";
-  const parts = newHost.split(".");
-  if (!isNaN(parseInt(parts[parts.length - 1]))) {
-    port = parts.pop();
-    newHost = parts.join(".");
-  }
+  let userAgent = url.searchParams.get("pua");
+  let referer = url.searchParams.get("pref");
+  url.searchParams.delete("pua");
+  url.searchParams.delete("pref");
   let newRequestHeaders = new Headers(request.headers);
+  if (userAgent) {
+    newRequestHeaders.set("User-Agent", decodeURIComponent(userAgent));
+  }
+  if (!referer) {
+    referer = `https://${newHost}/`;
+  } else {
+    referer = decodeURIComponent(referer);
+  }
+  newRequestHeaders.set("Referer", referer);
   newRequestHeaders.set("Host", newHost);
-  newRequestHeaders.set("Referer", `https://${newHost}:${port ? port : 443}/`);
-  const newURL = `https://${newHost}:${port ? port : 443}${path}`;
+  const newURL = `https://${newHost}${path}${url.search}`;
   const modifiedReq = new Request(newURL, {
     method: request.method,
     headers: newRequestHeaders,
@@ -38,7 +50,7 @@ async function handleRequest(request) {
     const baseProxyDomain = domainParts.slice(1).join(".");
     data = data.replace(new RegExp("(^|[^+/a-zA-Z0-9])//([a-zA-Z0-9-\\.]+)/", "gi"), (_, prefix, matchedURL) => {
       let replacedURL = matchedURL.replaceAll(":", ".").replaceAll("-", "--").replaceAll(".", "-").replaceAll("xn----", "nx----");
-      return `${prefix}//${replacedURL}-yourpassword.${baseProxyDomain}/`;
+      return `${prefix}//${replacedURL}-${password}.${baseProxyDomain}/`;
     });
     return new Response(data, {
       status: response.status,
