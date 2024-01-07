@@ -11,7 +11,7 @@ async function handleRequest(request) {
   let path = url.pathname;
   let domainParts = url.hostname.split(".");
   if (domainParts.length > 3) return new Response("Invalid request", { status: 400, statusText: "Bad Request" });
-  let newHostd = domainParts[0].replaceAll("nx----", "xn__").replaceAll("--", "_").replaceAll("-", ".").replaceAll("_", "-");
+  let newHostd = domainParts[0].replaceAll("nx----", "xn@@").replaceAll("--", "@").replaceAll("-", ".").replaceAll("@", "-");
   let newHost = newHostd.substring(0, newHostd.lastIndexOf("."));
   password = newHostd.substring(newHostd.lastIndexOf(".") + 1);
   if (!newHost.includes(".")) return new Response("Invalid request", { status: 400, statusText: "Bad Request" });
